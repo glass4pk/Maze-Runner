@@ -1,0 +1,383 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="utf-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<!-- <meta name="viewport" content = "width=device-width, target-densitydpi=high-dpi, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" /> -->
+<meta name="viewport" content = "width=320; target-densitydpi=high-dpi; initial-scale=1.0; maximum-scale=1.0; user-scalable=no" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+<meta content="telephone=no" name="format-detection" />
+<meta name="keywords" content="seokeywords"/>
+<meta name="description" content="seodescription"/>
+<title>手势滑动横向版</title>
+<link rel="stylesheet" type="text/css" href="stylesheets/base.css" />
+<style>
+body{overflow: hidden;}
+body,ul,li,img{margin:0;padding:0;}
+@media screen and (min-width:240px) {
+    html, body{
+        font-size:9px;
+    }
+}
+@media screen and (min-width:320px) {
+    html, body{
+        font-size:12px;
+    }
+}
+@media screen and (min-width:480px) {
+    html, body{
+    font-size:18px;
+    }
+}
+@media screen and (min-width:640px) {
+    html, body{
+        font-size:24px;
+    }
+}
+@media screen and (min-width:960px) {
+    html, body{
+        font-size:36px;
+    }
+}
+/*
+div.imgbox{width:26.666666rem;height:40rem;overflow:hidden;margin:0 auto;}
+div.imgbox ul{clear:both;width:75rem;}
+div.imgbox ul li{float:left;width:26.666666rem;height:40rem;overflow:hidden;text-align:center;}
+div.imgbox ul li img{width:26.666666rem;height:40rem;}
+*/
+
+#page{color:red;}
+#ctrlBox { float: right; clear:both; width:100%; }
+#ctrlBox td {width:33%;}
+#ctrlBox td a{ display:block; padding:0px; font-size: 36px;}
+#key_up, #key_down { padding:0px 20px; }
+
+</style>
+</head>
+<body>
+
+<div id="maze"></div>
+
+<p>
+    x : <span id="span_x"></span><br />
+    y : <span id="span_y"></span><br />
+    z : <span id="span_z"></span><br />
+</p>
+
+<table id="ctrlBox">
+    <tbody>
+        <tr><td></td><td><a id="key_up" href="javascript:void(0)">↑</a></td><td></td></tr>
+        <tr><td><a id="key_left" href="javascript:void(0)">←</a></td><td></td><td><a id="key_right" href="javascript:void(0)">→</a></td></tr>
+        <tr><td></td><td><a id="key_down" href="javascript:void(0)">↓</a></td><td></td></tr>
+    </tbody>
+</table>
+    
+</body>    
+    
+    
+
+
+<script src="javascripts/zepto.min.js"></script>
+<script src="javascripts/base.js"></script>
+<script>
+(function(){
+
+var windowW = (document.body.clientWidth > document.documentElement.clientWidth)?document.body.clientWidth:document.documentElement.clientWidth;
+var windowH = (document.body.clientHeight > document.documentElement.clientHeight)?document.body.clientHeight:document.documentElement.clientHeight;
+
+
+/*
+    注意：$.mggScrollImg返回的scrollImg对象上有
+            next，prev，go三个方法，可以实现外部对滚动索引的控制。
+    如：scrollImg.next();//会切换到下一张图片
+        scrollImg.go(0);//会切换到第一张图片
+*/
+
+//生成迷宫
+var maze = new Array();
+//根据长宽生成封闭表格
+for(var i=0; i<20; i++){
+    var a = new Array();
+    for(var j=0; j<30; j++){
+        a.push({
+            top:1,
+            bottom:1,
+            left:1,
+            right:1,
+            set:0
+        });
+    }
+    maze.push(a);
+}
+//生成迷宫路径
+var path = new Array();
+var randomDirection = function(){
+    var num = Math.floor(Math.random() * 4);
+    var direction = ['top','bottom','left','right'];
+    return direction[num];
+}
+var curX = 0;
+var curY = 0;
+var mazeW = 20;
+var mazeH = 30;
+maze[curX][curY].set = 1;
+path.push({x:0,y:0});
+while (curX != mazeW-1 || curY != mazeH-1){
+    
+    var flag = true;
+    var direction = randomDirection();
+    switch (direction) {
+        case 'top':
+            curY--;
+            if( curY < 0){
+                //不可用
+                curY++;
+                flag = false;
+            }
+            break;
+        case 'bottom':
+            curY++;
+            if( curY > mazeH-1){
+                //不可用
+                curY--;
+                flag = false;
+            }
+            break;
+        case 'left':
+            curX--;
+            if( curX < 0){
+                //不可用
+                curX++;
+                flag = false;
+            }
+            break;
+        case 'right':
+            curX++;
+            if(curX > mazeW-1){
+                //不可用
+                curX--;
+                flag = false;
+            }
+            break;
+    }
+    //下一个点
+    if(flag == true){
+        //console.log(curX+","+curY)
+        if(maze[curX][curY].set==1){
+            //找到重复的点
+            console.log('got repeat');
+            var beginI = -1;
+            //找出要删除的起始点
+            for(var i=0;i<path.length;i++){
+                if(path[i].x == curX && path[i].y == curY){
+                    beginI = i;
+                }
+            }
+            beginI++;
+            for(var i=beginI;i<path.length;i++){
+                var x = path[i].x;
+                var y = path[i].y;
+                maze[x][y].set = 0;
+                path.splice(i,1);
+                i--;
+            }
+            
+        }
+        else{
+            //新的可用点，加入路径
+            path.push({x:curX,y:curY});
+            maze[curX][curY].set = 1;
+        }
+    }
+}
+//根据path打通墙壁
+for(var i=1; i<path.length;i++){
+    var curBlock = path[i-1];
+    var nextBlock = path[i];
+    var moveX = nextBlock.x - curBlock.x;
+    var moveY = nextBlock.y - curBlock.y;
+    if(moveX > 0){
+        //往右走
+        maze[curBlock.x][curBlock.y].right = 0;
+        maze[nextBlock.x][nextBlock.y].left = 0;
+    }
+    else if (moveX < 0){
+        //往左走
+        maze[curBlock.x][curBlock.y].left = 0;
+        maze[nextBlock.x][nextBlock.y].right = 0;
+    }
+    else if (moveY > 0){
+        //往下走
+        maze[curBlock.x][curBlock.y].bottom = 0;
+        maze[nextBlock.x][nextBlock.y].top = 0;
+    }
+    else if (moveY < 0){
+        //往上走
+        maze[curBlock.x][curBlock.y].top = 0;
+        maze[nextBlock.x][nextBlock.y].bottom = 0;
+    }
+}
+//生成其他扰乱路径
+var level = 10; //难度系数
+
+for(var p=0; p<path.length; p++){
+    var x = path[p].x;
+    var y = path[p].y;
+    var block = maze[x][y];
+    var num = Math.floor(Math.random() * level);
+    for(var n=1; n<=num; n++){
+        var direction = randomDirection();
+        block[direction] = 0;
+    } 
+}
+for(var x=0; x<20; x++){
+    for(var y=0; y<30; y++){
+        var block = maze[x][y];
+        if(block.set == 0){
+            //执行多次打通本格墙壁
+            var num = Math.floor(Math.random() * level);
+            for(var n=1; n<=num; n++){
+                var direction = randomDirection();
+                block[direction] = 0;
+            }   
+        }
+    }   
+}
+//生成迷宫END
+
+//以后直接调用AJAX，获得maze对象，放到下面实例化中
+//实例化迷宫对象
+var maze = $.Maze('#maze',{
+    maze : maze,
+    width : 20,
+    height : 30        
+});
+//实例化控制按钮
+$("#key_up").click(maze.moveUp);
+$("#key_down").click(maze.moveDown);
+$("#key_left").click(maze.moveLeft);
+$("#key_right").click(maze.moveRight);
+
+$(window).keydown(function(event){
+  switch(event.keyCode) {
+    // ...
+    // 不同的按键可以做不同的事情
+    // 不同的浏览器的keycode不同
+    // 更多详细信息:     http://unixpapa.com/js/key.html
+    // ...
+    case 37: 
+        maze.moveLeft();
+        break;
+    case 38: 
+        maze.moveUp();
+        break;
+    case 39: 
+        maze.moveRight();
+        break;
+    case 40: 
+        maze.moveDown();
+        break;
+  }
+});
+
+
+function init(){  
+　　if (window.DeviceMotionEvent) {  
+　　　　// 移动浏览器支持运动传感事件  
+　　　　window.addEventListener('devicemotion', deviceMotionHandler, false);  
+　　　　  
+　　} else{  
+　　　　// 移动浏览器不支持运动传感事件  
+　　　　alert("浏览器不支持运动传感事件")
+　　}   
+}  
+
+// 首先，定义一个摇动的阀值  
+var SHAKE_THRESHOLD = 3000;  
+// 定义一个变量保存上次更新的时间  
+var last_update = 0;  
+// 紧接着定义x、y、z记录三个轴的数据以及上一次出发的时间  
+var x;  
+var y;  
+var z;  
+var last_x;  
+var last_y;  
+var last_z;  
+  
+// 为了增加这个例子的一点无聊趣味性，增加一个计数器  
+var count = 0;  
+  
+function deviceMotionHandler(eventData) {  
+　　// 获取含重力的加速度  
+　　var acceleration = eventData.accelerationIncludingGravity;   
+  
+　　// 获取当前时间  
+　　var curTime = new Date().getTime();   
+　　var diffTime = curTime - last_update;  
+　　// 固定时间段  
+　　if (diffTime > 200) {  
+　　　　last_update = curTime;   
+  
+　　　　x = acceleration.x;   
+　　　　y = acceleration.y;     
+  
+        $("#span_x").html(x);
+        $("#span_y").html(y);
+
+        //x > 0 ，左倾， x < 0 右倾
+        //y > 0 ，下倾， y < 0 上倾
+
+        /*
+　　　　var speed = Math.abs(x + y + z - last_x - last_y - last_z) / diffTime * 10000;   
+　　　　if (speed > SHAKE_THRESHOLD) {   
+　　　　　　// TODO:在此处可以实现摇一摇之后所要进行的数据逻辑操作  
+　　　　　　count++;  
+　　　　　　alert("你摇动了手机");
+　　　　}  
+　　　　last_x = x;   
+　　　　last_y = y;   
+　　　　last_z = z;   
+        */
+        //倾斜阀值
+        var step = 2.0;
+        if(Math.abs(x) > Math.abs(y)){
+            //结算X
+            if( x > step){
+                //左倾
+                maze.moveLeft();
+            }
+            if( x < -step){
+                //右倾
+                maze.moveRight();
+            }
+        }
+        else {
+            //结算Y
+            if( y > step){
+                //左倾
+                maze.moveDown();
+            }
+            if( y < -step){
+                //右倾
+                maze.moveUp();
+            }
+        }
+
+
+　　}   
+}   
+
+$(document).ready(function(){  
+    init();  
+});  
+
+
+
+
+
+})();
+
+</script>
+
+</html>
